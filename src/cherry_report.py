@@ -166,14 +166,14 @@ def main():
 
     # Get date range
     start_year = 2022
-    start_month = int(input("\nStart month (1-12): "))
-    start_day = int(input("\nStart day (1-31): "))
+    start_month = int(input("\nStart month (1-12):"))
+    start_day = int(input("\nStart day (1-31):"))
     start_date = datetime.datetime(start_year, start_month, start_day)
     start_date_str = start_date.strftime("%m-%d")
 
     end_year = 2022
-    end_month = int(input("\nEnd month (1-12): "))
-    end_day = int(input("\nEnd day (1-31): "))
+    end_month = int(input("\nEnd month (1-12):"))
+    end_day = int(input("\nEnd day (1-31):"))
     end_date = datetime.datetime(end_year, end_month, end_day)
     end_date_str = end_date.strftime("%m-%d")
 
