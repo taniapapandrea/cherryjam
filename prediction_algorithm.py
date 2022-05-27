@@ -1,6 +1,6 @@
 import datetime
 
-import database_manager
+import DatabaseManager
 
 # All the pieces of data that might be used in calculations
 TWITTER_FIELDS = ['id', 'date', 'twitter_life_score', 'followers', 'following']
@@ -16,36 +16,37 @@ def train():
     Report all tests in logs
     """
     # Gather all data ??
-    functions = database_manager.get("ALGORITHMS", "function", "status=active")
+    functions = DatabaseManager.get("ALGORITHMS", "function", "status=active")
     today = datetime.date.today()
-    t_data = database_manager.get("TWITTER", TWITTER_FIELDS, "release_date<today")
-    d_data = database_manager.get("DISCORD", DISCORD_FIELDS, "release_date<today")
-    o_data = database_manager.get("OPENSEA", OPENSEA_FIELDS, "release_date<today")
-    p_data = database_manager.get("PROJECT", PROJECT_FIELDS, "release_date<today")
+    t_data = DatabaseManager.get("TWITTER", TWITTER_FIELDS, "release_date<today")
+    d_data = DatabaseManager.get("DISCORD", DISCORD_FIELDS, "release_date<today")
+    o_data = DatabaseManager.get("OPENSEA", OPENSEA_FIELDS, "release_date<today")
+    p_data = DatabaseManager.get("PROJECT", PROJECT_FIELDS, "release_date<today")
 
-    #Test and each algorithm
+    #Test each function to see how well it correlates with price
     for function in functions:
         total_accuracy = 0
         for project in projects:
             #plot date x price
-            #plot cherry_score x price
+            #plot date x cherry_score
             #find correlation between the two
             #rate algorithm based on correlation
             total_accuracy += score
         accuracy = total_accuracy / (len(projects))
-        database_manager.enter("ALGORITHMS", [function,accuracy])
+        DatabaseManager.enter("ALGORITHMS", [function,accuracy])
 
 def predict_future():
     """
-    Uses the top prediction algorithm to identify high profile pre-released projects
+    Uses the top prediction algorithm to identify pre-released projects with potential high price
 
     Report all tests in logs
     """
-    # Find algorithm with top accuracy
-    # Gather data as above except release_date>today
+    # Get algorithm with top accuracy
+    # Gather all data as above except release_date>today
     for project in projects:
-        # Find accuracy score as above
-        database_manager.enter("PROJECTS", ["project", "score"])
+        #plot date x cherry_score
+        #score = slope of graph
+        DatabaseManager.enter("PROJECTS", ["project", "score"])
     # Return the top scored projects
 
 # accuracy of an algorithm changes every day

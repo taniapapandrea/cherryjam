@@ -1,16 +1,5 @@
 import data_collection
-
-def train_prediction_algorithm():
-    """
-    Uses post-released project data to test and improve the prediction algorithm
-    """
-    pass
-
-def predict_future():
-    """
-    Uses the current prediction algorithm to identify high profile pre-released projects
-    """
-    pass
+import prediction_algorithm
 
 def prompt_human_input():
     """
@@ -26,9 +15,9 @@ def main():
     As well as subjective human-entered data for a few selected projects
     """
     data_collection.daily_scrape()
-    train_prediction_algorithm()
-    predict_future()
-    prompt_human_input()
+    # prediction_algorithm.train()
+    # prediction_algorithm.predict_future()
+    # prompt_human_input()
 
 if __name__ == "__main__":
     main()
