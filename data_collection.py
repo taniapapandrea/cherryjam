@@ -9,7 +9,7 @@ from DatabaseManager import DatabaseManager
 
 from RarityScraper import RarityScraper
 from TwitterScraper import TwitterScraper
-# from DiscordScraper import DiscordScraper
+from DiscordScraper import DiscordScraper
 # from OpenseaScraper import OpenseaScraper
 
 def scrape_rarity(dm):
@@ -49,7 +49,7 @@ def scrape_twitter(dm, user_list):
     print('\nTwitter Scrape {}'.format(today))
 
     tscraper = TwitterScraper(user_list)
-    failed_ids = tscraper.batch_scrape(tries=3)
+    failed_ids = tscraper.batch_scrape()
     data = tscraper.dump_data()
 
     for d in data:
@@ -70,6 +70,16 @@ def scrape_discord(dm, user_list):
     """
     today = datetime.date.today().strftime('%Y-%m-%d')
     print('\nDiscord Scrape {}'.format(today))
+
+    dscraper = DiscordScraper(user_list)
+    failed_ids = dscraper.batch_scrape()
+    data = dscraper.dump_data()
+
+    for d in data:
+        d['date'] = today
+        dm.enter_discord_record(d)
+
+    dm.remove_discord_ids(failed_ids)
 
 def scrape_opensea(dm, project_list):
     """
@@ -93,13 +103,13 @@ def daily_scrape():
     dm = DatabaseManager()
     dm.begin_transaction()
 
-    scrape_rarity(dm)
+    # scrape_rarity(dm)
 
-    twitter_ids_pre_release = dm.get_twitter_ids_pre_release(today)
-    scrape_twitter(dm, twitter_ids_pre_release)
+    # twitter_ids_pre_release = dm.get_twitter_ids_pre_release(today)
+    # scrape_twitter(dm, twitter_ids_pre_release)
 
-    # discord_ids_pre_release = dm.get_discord_ids_pre_release(today)
-    # scrape_discord(dm, discord_ids_pre_release)
+    discord_ids_pre_release = dm.get_discord_ids_pre_release(today)
+    scrape_discord(dm, discord_ids_pre_release)
 
     # projects_post_release = dm.get_projects_post_release(today)
     # scrape_opensea(dm, projects_post_release)

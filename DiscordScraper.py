@@ -1,7 +1,9 @@
 import sys
 import re
+import os
 
 from bs4 import BeautifulSoup
+import pandas as pd
 
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -10,13 +12,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 
-FOLLOWERS_DIV_CLASS = "r-1w6e6rj"
+MEMBERS_DIV_CLASS = "activityCount-2n5Mj9"
 LOGGING = False
-WAIT_TIME = 10
+WAIT_TIME = 5
 
-class TwitterScraper:
+class DiscordScraper:
     """
-    An object to collect data from twitter user pages
+    An object to collect data from a discord user page
+    For now, this just includes number of followers
     """
     def __init__(self, users):
         self.users = users
@@ -35,7 +38,7 @@ class TwitterScraper:
         """
         Open a url on the virtual Chrome browser
         """
-        url =  "https://twitter.com/{}".format(user)
+        url =  "https://discord.com/invite/{}".format(user)
         try:
             self.driver.get(url)
         except:
@@ -49,10 +52,10 @@ class TwitterScraper:
         """
         try:
             WebDriverWait(self.driver, WAIT_TIME).until(
-                EC.presence_of_element_located((By.CLASS_NAME, FOLLOWERS_DIV_CLASS))
+                EC.presence_of_element_located((By.CLASS_NAME, MEMBERS_DIV_CLASS))
             )
         except TimeoutException:
-            error = '\n{}\nError: Website timed out'.format(self.current_user)
+            error = '\n{}\nError: Website not loaded or account not found'.format(self.current_user)
             if LOGGING:
                 print(error)
 
@@ -71,71 +74,43 @@ class TwitterScraper:
 
     def str_to_int(self, s):
         """
-        Convert a twitter-formatted number to an int
+        Convert a discord-formatted number to an int
 
         Args:
-            s (str): string describing a number in the format "51.9K"
+            s (str): string describing a number in the format "123,456"
 
         Returns:
             int: number as an integer
         """
         s = s.replace(',', '')
-        if 'K' in s:
-            if '.' in s:
-                decimals = len(s.strip('K').split('.')[1])
-                z = 3 - decimals
-            else:
-                z = 3
-            s = s.replace('K', '0'*z)
-        elif 'M' in s:
-            if '.' in s:
-                decimals = len(s.strip('M').split('.')[1])
-                z = 6 - decimals
-            else:
-                z = 6
-            s = s.replace('M', '0'*z)
-        s = s.replace('.', '')
         return int(s)
 
-    def get_followers(self):
+    def get_members(self):
         """
-        Retrieves follower data from the twitter profile
+        Finds members information on a discord invite page
 
-        Returns:
-            tuple (int): followers, following
+        Returns
+            tuple(int): online members, total members
         """
-        followers = -1
-        following = -1
+        online, total = -1, -1
         error = ''
-
         if self.soup:
-            divs = self.soup.find_all("div", FOLLOWERS_DIV_CLASS)
-            text = ''
-            for div in divs:
-                text += div.getText()
+            div = self.soup.find("div", MEMBERS_DIV_CLASS)
+            text = div.getText() if div else ''
             if (len(text) > 0):
-
-                # Followers
-                pattern = r"(([\d.,KM])+) Followers"
+                # parse 123,456 Online98,000 Members
+                pattern = r"((?:\d{1,3},)?\d{1,3}) Online((?:\d{1,3},)?\d{1,3}) Members"
                 match = re.search(pattern, text)
                 if match:
-                    followers = self.str_to_int(match.group(1))
+                    online = self.str_to_int(match.group(1))
+                    total = self.str_to_int(match.group(2))
                 else:
-                    error = '\n{}\nError: Could not parse followers from string: {}\n'.format(self.current_user, text)
-
-                # Following
-                pattern = r"(([\d.,KM])+) Following"
-                match = re.search(pattern, text)
-                if match:
-                    following = self.str_to_int(match.group(1))
-                else:
-                    error = '\n{}\nError: Could not parse following from string: {}\n'.format(self.current_user, text)
-            
+                    error = '\n{}\nError: Could not parse int from string: {}\n'.format(self.current_user, text)
             else:
-                error = '\n{}\nError: Could not find any followers text on the page\n'.format(self.current_user)
+                error = '\n{}\nError: Could not find any members text on the page\n'.format(self.current_user)
         if error and LOGGING:
             print(error)
-        return followers, following
+        return online, total
 
     def calculate_activity_score(self):
         """
@@ -171,10 +146,10 @@ class TwitterScraper:
             self.load_wait()
             self.make_soup()
 
-            # Gather follower data
-            followers, following = self.get_followers()
-            if followers > -1 and following > -1:
-                user_data = {'twitter_id': user, 'followers': followers, 'following': following}
+            # Gather member data
+            online, total = self.get_members()
+            if online > -1 and total > -1:
+                user_data = {'discord_id': user, 'online': online, 'members':total}
 
                 # Gather activity data
                 activity = self.calculate_activity_score()
@@ -193,7 +168,7 @@ class TwitterScraper:
             print(f)
         return failures
 
-    def batch_scrape(self, tries=2):
+    def batch_scrape(self, tries=3):
         """
         Runs a new batch of data collection
 

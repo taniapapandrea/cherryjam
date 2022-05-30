@@ -1,5 +1,9 @@
 """
-database .schemas:
+_scraped_data databases are meant to be historical records;
+no data should be removed
+
+master_ databases are meant to be an accurate upkept record;
+incorrect data should be removed or updated
 
 CREATE TABLE master_project_list(
 name TEXT NOT NULL PRIMARY KEY,
@@ -46,7 +50,7 @@ CREATE TABLE opensea_scraped_data(
 
 );
 
-CREATE TABLE prediction_algorithms(
+CREATE TABLE master_prediction_algorithms(
 
 );
 """
@@ -169,6 +173,30 @@ class DatabaseManager:
                 ;""".format(columns, values)
         self.cursor.execute(sql_replace)
 
+    def enter_discord_record(self, data):
+        """
+        Adds new data into the discord_scraped_data database
+        If data already exists on the date/twitter_id, it will be overwritten
+
+        Args:
+            data (dict): information to enter
+                required fields: 
+                    -date
+                    -discord_id
+                optional fields: 
+                    -online
+                    -members
+                    -activity
+        """
+        data = {k:v for k,v in data.items() if v}   # Remove empty values
+        columns = str(list(data.keys())).replace("'", "")[1:-1]
+        values = str(list(data.values()))[1:-1]
+
+        sql_replace = """REPLACE INTO discord_scraped_data ({})
+                VALUES ({})
+                ;""".format(columns, values)
+        self.cursor.execute(sql_replace)
+
     def get_twitter_ids_pre_release(self, date):
         """
         Finds the twitter_id for projects that have not been released yet
@@ -232,5 +260,20 @@ class DatabaseManager:
         sql_update = """UPDATE master_project_list
                 SET twitter_id = ''
                 WHERE twitter_id in ({})
+                ;""".format(values)
+        self.cursor.execute(sql_update)
+
+    def remove_discord_ids(self, ids):
+        """
+        Removes a list of discord_ids from the master_project_list
+        This is intended to be used for failed/incorrect data
+
+        Args:
+            ids (list of str): discord_ids to delete
+        """
+        values = str(ids)[1:-1]
+        sql_update = """UPDATE master_project_list
+                SET discord_id = ''
+                WHERE discord_id in ({})
                 ;""".format(values)
         self.cursor.execute(sql_update)
