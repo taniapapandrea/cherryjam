@@ -13,7 +13,6 @@ from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 
 FOLLOWERS_DIV_CLASS = "r-1w6e6rj"
-SAVE_FREQUENCY = 5
 LOGGING = False
 ATTEMPTS = 2
 
@@ -130,7 +129,7 @@ class TwitterScraper:
                 pattern = r"(([\d.,KM])+) Following"
                 match = re.search(pattern, text)
                 if match:
-                    followers = self.str_to_int(match.group(1))
+                    following = self.str_to_int(match.group(1))
                 else:
                     error = '\n{}\nError: Could not parse following from string: {}\n'.format(self.current_user, text)
             
@@ -221,6 +220,6 @@ class TwitterScraper:
         """
         Returns:
             list of dicts: all scraped data
-            
+
         """
         return self.data

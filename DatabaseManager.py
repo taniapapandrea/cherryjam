@@ -2,10 +2,10 @@
 database .schemas:
 
 CREATE TABLE master_project_list(
-name TEXT PRIMARY KEY,
-release_date TEXT,
-twitter_id TEXT,
-discord_id TEXT,
+name TEXT NOT NULL PRIMARY KEY,
+release_date TEXT DEFAULT '',
+twitter_id TEXT DEFAULT '',
+discord_id TEXT DEFAULT '',
 status TEXT,
 rank INTEGER);
 
@@ -219,3 +219,18 @@ class DatabaseManager:
         self.cursor.execute(sql_filter)
         names = [x[0] for x in self.cursor.fetchall()]
         return names
+
+    def remove_twitter_ids(self, ids):
+        """
+        Removes a list of twitter_ids from the master_project_list
+        This is intended to be used for failed/incorrect data
+
+        Args:
+            ids (list of str): twitter_ids to delete
+        """
+        values = str(ids)[1:-1]
+        sql_update = """UPDATE master_project_list
+                SET twitter_id = ''
+                WHERE twitter_id in ({})
+                ;""".format(values)
+        self.cursor.execute(sql_update)

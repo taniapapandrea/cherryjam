@@ -4,7 +4,7 @@ import os
 
 from Rarity_PageElement import Rarity_PageElement
 
-PARSE_UPDATES = False
+PARSE_UPDATES = True
 
 class Rarity_NFTData:
     """
@@ -48,7 +48,7 @@ class Rarity_NFTData:
         """
         d = {}
         d['name'] = self.name
-        d['release_date'] = self.presale_date
+        d['release_date'] = self.release_date
         d['release_price'] = self.release_price
         d['presale_date'] = self.presale_date
         d['presale_price'] = self.presale_price
