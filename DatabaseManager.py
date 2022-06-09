@@ -118,6 +118,7 @@ class DatabaseManager:
                 VALUES ({})
                 ;""".format(columns, values)
         self.cursor.execute(sql_replace)
+        "COUNT"
 
     def enter_rarity_record(self, data):
         """
@@ -277,3 +278,5 @@ class DatabaseManager:
                 WHERE discord_id in ({})
                 ;""".format(values)
         self.cursor.execute(sql_update)
+
+    

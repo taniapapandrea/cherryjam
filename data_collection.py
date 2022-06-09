@@ -10,7 +10,7 @@ from DatabaseManager import DatabaseManager
 from RarityScraper import RarityScraper
 from TwitterScraper import TwitterScraper
 from DiscordScraper import DiscordScraper
-# from OpenseaScraper import OpenseaScraper
+from OpenseaScraper import OpenseaScraper
 
 def scrape_rarity(dm):
     """
@@ -103,15 +103,15 @@ def daily_scrape():
     dm = DatabaseManager()
     dm.begin_transaction()
 
-    # scrape_rarity(dm)
+    scrape_rarity(dm)
 
-    # twitter_ids_pre_release = dm.get_twitter_ids_pre_release(today)
-    # scrape_twitter(dm, twitter_ids_pre_release)
+    twitter_ids_pre_release = dm.get_twitter_ids_pre_release(today)
+    scrape_twitter(dm, twitter_ids_pre_release)
 
     discord_ids_pre_release = dm.get_discord_ids_pre_release(today)
     scrape_discord(dm, discord_ids_pre_release)
 
-    # projects_post_release = dm.get_projects_post_release(today)
-    # scrape_opensea(dm, projects_post_release)
+    projects_post_release = dm.get_projects_post_release(today)
+    scrape_opensea(dm, projects_post_release)
 
     dm.end_transaction()
