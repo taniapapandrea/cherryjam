@@ -31,7 +31,7 @@ def scrape_rarity(dm):
         d['date'] = today
         dm.enter_rarity_record(d)
         
-        master_project_keys = ['name', 'release_date', 'twitter_id', 'discord_id']
+        master_project_keys = ['name', 'release_date', 'twitter_id', 'discord_id', 'quantity']
         master_project_data = {k:d[k] for k in master_project_keys}
         dm.enter_project(master_project_data)
 
@@ -93,6 +93,14 @@ def scrape_opensea(dm, project_list):
     """
     today = datetime.date.today().strftime('%Y-%m-%d')
     print('\nOpensea Scrape {}'.format(today))
+
+    oscraper = OpenseaScraper(project_list)
+    failed_names = oscraper.batch_scrape()
+    data = oscraper.dump_data()
+
+    for d in data:
+        d['date'] = today
+        dm.enter_opensea_record(d)
 
 def daily_scrape():
     """

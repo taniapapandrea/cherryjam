@@ -10,6 +10,7 @@ name TEXT NOT NULL PRIMARY KEY,
 release_date TEXT DEFAULT '',
 twitter_id TEXT DEFAULT '',
 discord_id TEXT DEFAULT '',
+quantity INTEGER,
 status TEXT,
 rank INTEGER);
 
@@ -47,7 +48,11 @@ PRIMARY KEY(discord_id, date)
 );
 
 CREATE TABLE opensea_scraped_data(
-
+name TEXT NOT NULL,
+date TEXT NOT NULL,
+price REAL NOT NULL,
+highest_last_sale REAL,
+lowest_price REAL,
 );
 
 CREATE TABLE master_prediction_algorithms(
@@ -57,6 +62,8 @@ CREATE TABLE master_prediction_algorithms(
 
 import sqlite3
 from sqlite3 import Error
+from datetime import date
+from dateutil.relativedelta import relativedelta
 
 DB_FILE = 'cherry.db'
 
@@ -107,6 +114,7 @@ class DatabaseManager:
                     -release_date
                     -twitter_id
                     -discord_id
+                    -quantity
                     -status
                     -rank
         """
@@ -198,6 +206,30 @@ class DatabaseManager:
                 ;""".format(columns, values)
         self.cursor.execute(sql_replace)
 
+    def enter_opensea_record(self, data):
+        """
+        Adds new data into the opensea_scraped_data database
+        If data already exists on the date/name, it will be overwritten
+
+        Args:
+            data (dict): information to enter
+                required fields: 
+                    -date
+                    -name
+                optional fields: 
+                    -online
+                    -members
+                    -activity
+        """
+        data = {k:v for k,v in data.items() if v}   # Remove empty values
+        columns = str(list(data.keys())).replace("'", "")[1:-1]
+        values = str(list(data.values()))[1:-1]
+
+        sql_replace = """REPLACE INTO discord_scraped_data ({})
+                VALUES ({})
+                ;""".format(columns, values)
+        self.cursor.execute(sql_replace)
+
     def get_twitter_ids_pre_release(self, date):
         """
         Finds the twitter_id for projects that have not been released yet
@@ -232,7 +264,7 @@ class DatabaseManager:
         ids = [x[0] for x in self.cursor.fetchall()]
         return ids
 
-    def get_projects_post_release(self, date):
+    def get_projects_post_release(self, end_date):
         """
         Finds projects that have already been released
         
@@ -242,9 +274,11 @@ class DatabaseManager:
         Returns:
             list (str): all project names that meet search criteria
         """
+        MONTH_RANGE = 3
+        start_date = date.today() - relativedelta(months =+ MONTH_RANGE)
         sql_filter = """SELECT name from master_project_list
-                WHERE release_date < date('{}')
-                ;""".format(date)
+                WHERE release_date < date('{}') AND release_date < date('{}')
+                ;""".format(start_date, end_date)
         self.cursor.execute(sql_filter)
         names = [x[0] for x in self.cursor.fetchall()]
         return names
