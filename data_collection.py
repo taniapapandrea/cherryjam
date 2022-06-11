@@ -3,7 +3,7 @@ string = datetime_object.strftime('%Y-%m-%d')
 datetime_object = datetime.datetime.strptime(string, '%Y-%m-%d')
 """
 
-import datetime
+from datetime import date
 
 from DatabaseManager import DatabaseManager
 
@@ -11,6 +11,9 @@ from RarityScraper import RarityScraper
 from TwitterScraper import TwitterScraper
 from DiscordScraper import DiscordScraper
 from OpenseaScraper import OpenseaScraper
+
+def _today():
+    return date.today().strftime('%Y-%m-%d')
 
 def scrape_rarity(dm):
     """
@@ -20,7 +23,7 @@ def scrape_rarity(dm):
     Args:
         dm: DatabaseManager object
     """
-    today = datetime.date.today().strftime('%Y-%m-%d')
+    today = _today()
     print('\nRarity Scrape {}'.format(today))
 
     rscraper = RarityScraper()
@@ -45,7 +48,7 @@ def scrape_twitter(dm, user_list):
         dm (DatabaseManager object): db handle for entering data
         user_list (list of str): Twitter usernames to scrape
     """
-    today = datetime.date.today().strftime('%Y-%m-%d')
+    today = _today()
     print('\nTwitter Scrape {}'.format(today))
 
     tscraper = TwitterScraper(user_list)
@@ -68,7 +71,7 @@ def scrape_discord(dm, user_list):
         dm (DatabaseManager object): db handle for entering data
         user_list (list of str): Discord usernames to scrape
     """
-    today = datetime.date.today().strftime('%Y-%m-%d')
+    today = _today()
     print('\nDiscord Scrape {}'.format(today))
 
     dscraper = DiscordScraper(user_list)
@@ -91,14 +94,14 @@ def scrape_opensea(dm, project_list):
         dm (DatabaseManager object): db handle for entering data
         project_list (list of str): NFT project names to scrape
     """
-    today = datetime.date.today().strftime('%Y-%m-%d')
+    today = _today()
     print('\nOpensea Scrape {}'.format(today))
 
 def daily_scrape():
     """
     Runs all scrapers and records data in database
     """
-    today = datetime.date.today().strftime('%Y-%m-%d')
+    today = _today()
 
     dm = DatabaseManager()
     dm.begin_transaction()
