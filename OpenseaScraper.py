@@ -211,6 +211,7 @@ class OpenseaScraper:
                 #     self.data.append(project)
                 # else:
                 #     failures.append([project])
+                
             # Else
                 # add to failures
 
