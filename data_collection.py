@@ -104,7 +104,7 @@ def daily_scrape():
     dm.begin_transaction()
 
     scrape_rarity(dm)
-    """
+
     twitter_ids_pre_release = dm.get_twitter_ids_pre_release(today)
     scrape_twitter(dm, twitter_ids_pre_release)
 
@@ -113,5 +113,5 @@ def daily_scrape():
 
     projects_post_release = dm.get_projects_post_release(today)
     scrape_opensea(dm, projects_post_release)
-    """
+
     dm.end_transaction()
