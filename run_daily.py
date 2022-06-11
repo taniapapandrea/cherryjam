@@ -1,8 +1,8 @@
-from constants import DB_FILE
 from datetime import datetime
 import os
 import shutil
 
+from DatabaseManager import DB_FILE
 import data_collection
 import prediction_algorithm
 
