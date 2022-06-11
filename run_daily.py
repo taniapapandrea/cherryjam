@@ -1,12 +1,14 @@
 import data_collection
 import prediction_algorithm
 
+
 def prompt_human_input():
     """
     Runs a UI to prompt the user to review and rate a subset of projects
     Records collected data into database
     """
     pass
+
 
 def main():
     """
@@ -19,5 +21,6 @@ def main():
     # prediction_algorithm.predict_future()
     # prompt_human_input()
 
-if __name__ == "__main__":
+
+if __name__ == '__main__':
     main()
