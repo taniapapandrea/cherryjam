@@ -33,7 +33,7 @@ def main():
     As well as subjective human-entered data for a few selected projects
     """
     backup_db()
-    # data_collection.daily_scrape()
+    data_collection.daily_scrape()
     # prediction_algorithm.train()
     # prediction_algorithm.predict_future()
     # prompt_human_input()
