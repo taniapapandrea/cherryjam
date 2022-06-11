@@ -72,10 +72,6 @@ class DatabaseManager:
     A handle to access and modify the cherry SQLite3 database
     """
     def __init__(self):
-        self.connection = None
-        self.cursor = None
-
-    def create_connection(self):
         """
         Creates a database connection to the cherry.db SQLite database
         """
@@ -85,13 +81,12 @@ class DatabaseManager:
         except Error as e:
             print(e)
         self.connection = conn
+        self.cursor = self.connection.cursor()
 
     def begin_transaction(self):
         """
         Opens the database connection
         """
-        self.create_connection()
-        self.cursor = self.connection.cursor()
         self.cursor.execute('BEGIN TRANSACTION;')
 
     def end_transaction(self):
@@ -313,4 +308,20 @@ class DatabaseManager:
                 ;""".format(values)
         self.cursor.execute(sql_update)
 
-    
+    def lookup_quantity(self, project):
+        """
+        Looks up the quantity value for a given project
+
+        Args:
+            project (str): project name to filter by
+
+        Returns:
+            quantity (str): number of NFTs in the project
+        """
+        sql_lookup = """SELECT quantity FROM master_project_list WHERE name = {}
+                """.format(project)
+
+        self.cursor.execute(sql_lookup)
+        quantity = self.cursor.fetchall()[0]
+
+        return quantity

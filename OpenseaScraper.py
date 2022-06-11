@@ -10,9 +10,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 
+from DatabaseManager import DatabaseManager
+
 SEARCHBAR_DIV_CLASS = 'sc-3dr67n-0'
+PREVIEW_RESULTS_ID = "tippy-471"
 LOGGING = False
-WAIT_TIME = 10
+WAIT_TIME = 5
 
 class OpenseaScraper:
     """
@@ -56,6 +59,20 @@ class OpenseaScraper:
             if LOGGING:
                 print(error)
 
+    def load_wait_results(self):
+        """
+        Wait for the search results to load
+        In the results preview (after typing but not pressing enter)
+        """
+        try:
+            WebDriverWait(self.driver, WAIT_TIME).until(
+                EC.presence_of_element_located((By.ID, PREVIEW_RESULTS_ID))
+            )
+        except TimeoutException:
+            error = '\nError: Preview results timed out'
+            if LOGGING:
+                print(error)
+
     # def load_wait_projectpage(self):
     #     """
     #     Wait for the page to load
@@ -65,13 +82,13 @@ class OpenseaScraper:
     #             EC.presence_of_element_located((By.CLASS_NAME, SEARCHBAR_DIV_CLASS))
     #         )
     #     except TimeoutException:
-    #         error = '\n{}\nError: Project page timed out'.format(self.current_user)
+    #         error = '\n{}\nError: Project page timed out'.format(self.current_project)
     #         if LOGGING:
     #             print(error)
 
     def make_soup(self):
         """
-        Get the current html
+        Get the current html                        
         """
         html = self.driver.page_source
         soup = BeautifulSoup(html, "html.parser")
@@ -150,14 +167,6 @@ class OpenseaScraper:
             print(error)
         return followers, following
 
-    def type_name(self):
-        """
-        Types a name into the searchbar
-
-        Returns:
-            list (str): collections shown
-        """
-
     def batch_scrape(self):
         """
         Runs a new batch of data collection
@@ -168,19 +177,24 @@ class OpenseaScraper:
         self.open_chrome()
         self.retrieve_opensea_url()
         self.load_wait_homepage()
-        self.make_soup()
 
         failures = []
 
         for i, project in enumerate(self.projects):
             i += 1
             self.current_project = project
+
             # Type name into search bar
-            self.search_name()
+            input = self.driver.find_element(By.XPATH, "//input")
+            input.send_keys(project)
 
             # Lookup quantity from db
+            dm = DatabaseManager()
+            quantity = dm.lookup_quantity(project)
 
             # Look for a match
+            self.load_wait_results()
+            self.make_soup()
 
             # If match found
                 # Click on option
