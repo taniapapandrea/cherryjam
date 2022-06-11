@@ -10,9 +10,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 
-FOLLOWERS_DIV_CLASS = "r-1w6e6rj"
+from DatabaseManager import DatabaseManager
+
+SEARCHBAR_DIV_CLASS = 'sc-3dr67n-0'
+PREVIEW_RESULTS_ID = "tippy-471"
 LOGGING = False
-WAIT_TIME = 10
+WAIT_TIME = 5
 
 class OpenseaScraper:
     """
@@ -31,34 +34,61 @@ class OpenseaScraper:
         self.driver = webdriver.Chrome(ChromeDriverManager().install())
         print('====== CherryJam driving ======')
 
-    def retrieve_url(self, user):
+    def retrieve_opensea_url(self):
         """
         Open a url on the virtual Chrome browser
         """
-        url =  "https://twitter.com/{}".format(user)
+        url =  "https://opensea.io/"
         try:
             self.driver.get(url)
         except:
-            error = '\n{}\nError: Could not retrieve the url: {}'.format(self.current_user, url)
+            error = '\nError: Could not retrieve the url: {}'.format(url)
             if LOGGING: 
                 print(error)
 
-    def load_wait(self):
+    def load_wait_homepage(self):
         """
         Wait for the page to load
         """
         try:
             WebDriverWait(self.driver, WAIT_TIME).until(
-                EC.presence_of_element_located((By.CLASS_NAME, FOLLOWERS_DIV_CLASS))
+                EC.presence_of_element_located((By.CLASS_NAME, SEARCHBAR_DIV_CLASS))
             )
         except TimeoutException:
-            error = '\n{}\nError: Website timed out'.format(self.current_user)
+            error = '\nError: Homepage timed out'
             if LOGGING:
                 print(error)
 
+    def load_wait_results(self):
+        """
+        Wait for the search results to load
+        In the results preview (after typing but not pressing enter)
+        """
+        try:
+            WebDriverWait(self.driver, WAIT_TIME).until(
+                EC.presence_of_element_located((By.ID, PREVIEW_RESULTS_ID))
+            )
+        except TimeoutException:
+            error = '\nError: Preview results timed out'
+            if LOGGING:
+                print(error)
+
+    # def load_wait_projectpage(self):
+    #     """
+    #     Wait for the page to load
+    #     """
+    #     try:
+    #         WebDriverWait(self.driver, WAIT_TIME).until(
+    #             EC.presence_of_element_located((By.CLASS_NAME, SEARCHBAR_DIV_CLASS))
+    #         )
+    #     except TimeoutException:
+    #         error = '\n{}\nError: Project page timed out'.format(self.current_project)
+    #         if LOGGING:
+    #             print(error)
+
     def make_soup(self):
         """
-        Get the current html
+        Get the current html                        
         """
         html = self.driver.page_source
         soup = BeautifulSoup(html, "html.parser")
@@ -137,81 +167,58 @@ class OpenseaScraper:
             print(error)
         return followers, following
 
-    def calculate_activity_score(self):
-        """
-        Attempts to quantify the activity / community / life displayed on the profile
-
-        Returns:
-            int: rating between 0-100
-                0 = bot suspected
-                100 = engaged human community
-        """
-        score = -1
-        if self.soup:
-            pass
-        return score
-
-    def traverse_batch(self, batch):
-        """
-        Iterates through a list of users: loads each webpage, gathers html, and records followers data
-
-        Args:
-            batch (list[str]): usernames to run
-
-        Returns:
-            list[str]: usernames that failed
-        """
-        failures = []
-
-        for i, user in enumerate(batch):
-            # Load the webpage
-            i += 1
-            self.current_user = user
-            self.retrieve_url(self.current_user)
-            self.load_wait()
-            self.make_soup()
-
-            # Gather follower data
-            followers, following = self.get_followers()
-            if followers > -1 and following > -1:
-                user_data = {'twitter_id': user, 'followers': followers, 'following': following}
-
-                # Gather activity data
-                activity = self.calculate_activity_score()
-                if activity > -1:
-                    user_data['activity'] = activity
-
-                self.data.append(user_data)
-            else:
-                failures.append(user)
-
-            sys.stdout.write('\r[{}/{}]'.format(i, len(batch)))
-            sys.stdout.flush()
-
-        print('\nThis batch had {} successes and {} failures. Failure list:'.format( len(batch)-len(failures) , len(failures) ))
-        for f in failures:
-            print(f)
-        return failures
-
-    def batch_scrape(self, tries=2):
+    def batch_scrape(self):
         """
         Runs a new batch of data collection
 
-        Args:
-            tries (int): number of times to load each user in case of failure
-
         Returns:
-            list (str): users that failed after all tries
+            list (str): projects that were not found
         """
         self.open_chrome()
+        self.retrieve_opensea_url()
+        self.load_wait_homepage()
 
-        todo = self.users
-        for i in range(tries):
-            print('\nATTEMPT #{}'.format(i+1))
-            todo = self.traverse_batch(todo)
+        failures = []
+
+        for i, project in enumerate(self.projects):
+            i += 1
+            self.current_project = project
+
+            # Type name into search bar
+            input = self.driver.find_element(By.XPATH, "//input")
+            input.send_keys(project)
+
+            # Lookup quantity from db
+            dm = DatabaseManager()
+            quantity = dm.lookup_quantity(project)
+
+            # Look for a match
+            self.load_wait_results()
+            self.make_soup()
+
+            # If match found
+                # Click on option
+
+                # Load wait
+                # self.make_soup()
+
+                # Gather data
+                # price = self.get_price()
+                # if price:
+                #     hls = self.get_highest_last_price()
+                #     lp = self.get_lowest_price()
+                #     project_data = {'name': project, 'price': price, 'highest_last_sale': hls, 'lowest_price': lp}
+                #     self.data.append(project)
+                # else:
+                #     failures.append([project])
+                
+            # Else
+                # add to failures
+
+            sys.stdout.write('\r[{}/{}]'.format(i, len(self.projects)))
+            sys.stdout.flush()
 
         self.driver.quit()
-        failures = todo
         return failures
 
     def dump_data(self):
