@@ -1,3 +1,8 @@
+from constants import DB_FILE
+from datetime import datetime
+import os
+import shutil
+
 import data_collection
 import prediction_algorithm
 
@@ -9,6 +14,17 @@ def prompt_human_input():
     """
     pass
 
+def backup_db():
+    parts = DB_FILE.split('.')
+    a = '.'.join(parts[:-1])
+    b = parts[-1]
+    now = datetime.now().strftime('%Y%m%d')
+    backup_dir = f'./backup'
+
+    if not os.path.isdir(backup_dir):
+        os.mkdir(backup_dir)
+    backup_file = f'{backup_dir}/{a}_{now}.{b}'
+    shutil.copy(DB_FILE, backup_file)
 
 def main():
     """
@@ -16,7 +32,8 @@ def main():
     Gathers a large snapshot of objective data,
     As well as subjective human-entered data for a few selected projects
     """
-    data_collection.daily_scrape()
+    backup_db()
+    # data_collection.daily_scrape()
     # prediction_algorithm.train()
     # prediction_algorithm.predict_future()
     # prompt_human_input()
