@@ -33,7 +33,7 @@ def scrape_rarity(dm):
         d['date'] = today
         dm.enter_rarity_record(d)
         
-        master_project_keys = ['name', 'release_date', 'twitter_id', 'discord_id']
+        master_project_keys = ['name', 'release_date', 'twitter_id', 'discord_id', 'quantity']
         master_project_data = {k:d[k] for k in master_project_keys}
         dm.enter_project(master_project_data)
 
