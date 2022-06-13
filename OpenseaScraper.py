@@ -2,6 +2,7 @@ import sys
 import re
 
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
@@ -13,17 +14,17 @@ from selenium.common.exceptions import TimeoutException
 from DatabaseManager import DatabaseManager
 
 SEARCHBAR_DIV_CLASS = 'sc-3dr67n-0'
-PREVIEW_RESULTS_ID = "tippy-471"
-LOGGING = False
+PREVIEW_RESULTS_ID = "NavSearch--results"
+LOGGING = True
 WAIT_TIME = 5
 
 class OpenseaScraper:
     """
-    An object to collect data from twitter user pages
+    An object to collect data from opensea marketplace
     """
-    def __init__(self, users):
-        self.users = users
-        self.current_user = None
+    def __init__(self, projects):
+        self.projects = projects
+        self.current_project = None
         self.soup = None
         self.data = []
 
@@ -99,73 +100,45 @@ class OpenseaScraper:
             if LOGGING:
                 print(error)
 
-    def str_to_int(self, s):
+    def search_find_match(self, project, quantity):
         """
-        Convert a twitter-formatted number to an int
+        Searches for a Collection match in the preview search results
 
         Args:
-            s (str): string describing a number in the format "51.9K"
+            project(str): Project name to match
+            quantity(int): Number of items to match
 
         Returns:
-            int: number as an integer
+            bs4.Element.Tag: object containing a <a> html element
         """
-        s = s.replace(',', '')
-        if 'K' in s:
-            if '.' in s:
-                decimals = len(s.strip('K').split('.')[1])
-                z = 3 - decimals
+        print(project)
+        self.load_wait_results()
+        self.make_soup()
+        ul = self.soup.find("ul", id=PREVIEW_RESULTS_ID)
+        lis = [x for x in ul if isinstance(x, Tag)]
+        for li in lis:
+            text = li.getText()
+            if text == 'COLLECTIONS':
+                pass
+            elif text == 'ITEMS':
+                break
             else:
-                z = 3
-            s = s.replace('K', '0'*z)
-        elif 'M' in s:
-            if '.' in s:
-                decimals = len(s.strip('M').split('.')[1])
-                z = 6 - decimals
-            else:
-                z = 6
-            s = s.replace('M', '0'*z)
-        s = s.replace('.', '')
-        return int(s)
+                text_div = li.contents[0].contents[1]
+                name_text = text_div.contents[0].contents[0].getText()
+                items_text = text_div.contents[0].contents[1].getText()
 
-    def get_followers(self):
-        """
-        Retrieves follower data from the twitter profile
+                found_name = name_text.lower()
+                found_items = int(items_text[:-6].replace(',',''))
 
-        Returns:
-            tuple (int): followers, following
-        """
-        followers = -1
-        following = -1
-        error = ''
-
-        if self.soup:
-            divs = self.soup.find_all("div", FOLLOWERS_DIV_CLASS)
-            text = ''
-            for div in divs:
-                text += div.getText()
-            if (len(text) > 0):
-
-                # Followers
-                pattern = r"(([\d.,KM])+) Followers"
-                match = re.search(pattern, text)
-                if match:
-                    followers = self.str_to_int(match.group(1))
+                if (found_name == project) and (found_items == quantity):
+                    # Found a match!
+                    link = li.find('a')
+                    return link
                 else:
-                    error = '\n{}\nError: Could not parse followers from string: {}\n'.format(self.current_user, text)
-
-                # Following
-                pattern = r"(([\d.,KM])+) Following"
-                match = re.search(pattern, text)
-                if match:
-                    following = self.str_to_int(match.group(1))
-                else:
-                    error = '\n{}\nError: Could not parse following from string: {}\n'.format(self.current_user, text)
-            
-            else:
-                error = '\n{}\nError: Could not find any followers text on the page\n'.format(self.current_user)
-        if error and LOGGING:
-            print(error)
-        return followers, following
+                    if LOGGING:
+                        msg = "\nCould not find a search result for {}, {}".format(project, quantity)
+                        print(msg)
+                    return None
 
     def batch_scrape(self):
         """
@@ -187,20 +160,20 @@ class OpenseaScraper:
             # Type name into search bar
             input = self.driver.find_element(By.XPATH, "//input")
             input.send_keys(project)
+            self.load_wait_results()
+            self.make_soup()
 
             # Lookup quantity from db
             dm = DatabaseManager()
             quantity = dm.lookup_quantity(project)
+            match = self.search_find_match(project, quantity)
 
-            # Look for a match
-            self.load_wait_results()
-            self.make_soup()
-
-            # If match found
-                # Click on option
-
-                # Load wait
-                # self.make_soup()
+            if match:
+                self.click_result(match)
+                # self.load_wait_projectpage()
+                self.make_soup()
+                name = self.soup.find('h1').getText()
+                print(name)
 
                 # Gather data
                 # price = self.get_price()
@@ -210,10 +183,10 @@ class OpenseaScraper:
                 #     project_data = {'name': project, 'price': price, 'highest_last_sale': hls, 'lowest_price': lp}
                 #     self.data.append(project)
                 # else:
-                #     failures.append([project])
+                #     failures.append(project)
                 
-            # Else
-                # add to failures
+            else:
+                failures.append(project)
 
             sys.stdout.write('\r[{}/{}]'.format(i, len(self.projects)))
             sys.stdout.flush()

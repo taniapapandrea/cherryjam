@@ -93,6 +93,9 @@ def scrape_opensea(dm, project_list):
     today = _today()
     print('\nOpensea Scrape {}'.format(today))
 
+    oscraper = OpenseaScraper(project_list)
+    failed_ids = oscraper.batch_scrape()
+
 def daily_scrape():
     """
     Runs all scrapers and records data in database
@@ -102,21 +105,20 @@ def daily_scrape():
     dm = DatabaseManager()
 
     # Scrape project data
-    dm.begin_transaction()
+    # dm.begin_transaction()
 
-    scrape_rarity(dm)
+    # scrape_rarity(dm)
 
-    twitter_ids_pre_release = dm.get_twitter_ids_pre_release(today)
-    scrape_twitter(dm, twitter_ids_pre_release)
+    # twitter_ids_pre_release = dm.get_twitter_ids_pre_release(today)
+    # scrape_twitter(dm, twitter_ids_pre_release)
 
-    discord_ids_pre_release = dm.get_discord_ids_pre_release(today)
-    scrape_discord(dm, discord_ids_pre_release)
+    # discord_ids_pre_release = dm.get_discord_ids_pre_release(today)
+    # scrape_discord(dm, discord_ids_pre_release)
 
-    dm.end_transaction()
+    # dm.end_transaction()
 
     # Lookup prices of released projects
     dm.begin_transaction()
-
-    # projects_post_release = dm.get_projects_post_release(today)
-    # scrape_opensea(dm, projects_post_release)
+    projects_post_release = dm.get_projects_post_release(today)
+    scrape_opensea(dm, projects_post_release)
     dm.end_transaction()

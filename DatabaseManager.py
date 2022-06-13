@@ -318,8 +318,8 @@ class DatabaseManager:
         Returns:
             quantity (str): number of NFTs in the project
         """
-        sql_lookup = """SELECT quantity FROM master_project_list WHERE name = {}
-                """.format(project)
+        sql_lookup = """SELECT quantity FROM master_project_list WHERE name = '{}'
+                ;""".format(project)
 
         self.cursor.execute(sql_lookup)
         quantity = self.cursor.fetchall()[0]
