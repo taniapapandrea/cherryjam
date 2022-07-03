@@ -272,7 +272,7 @@ class DatabaseManager:
         MONTH_RANGE = 3
         start_date = date.today() - relativedelta(months =+ MONTH_RANGE)
         sql_filter = """SELECT name from master_project_list
-                WHERE release_date < date('{}') AND release_date < date('{}')
+                WHERE release_date > date('{}') AND release_date < date('{}')
                 ;""".format(start_date, end_date)
         self.cursor.execute(sql_filter)
         names = [x[0] for x in self.cursor.fetchall()]
@@ -322,6 +322,6 @@ class DatabaseManager:
                 ;""".format(project)
 
         self.cursor.execute(sql_lookup)
-        quantity = self.cursor.fetchall()[0]
+        quantity = self.cursor.fetchall()[0][0]
 
         return quantity

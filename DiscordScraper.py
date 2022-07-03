@@ -1,20 +1,19 @@
 import sys
 import re
-import os
+import time
 
 from bs4 import BeautifulSoup
-import pandas as pd
-
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 
 MEMBERS_DIV_CLASS = "activityCount-2n5Mj9"
 LOGGING = False
-WAIT_TIME = 5
+WAIT_TIME = 3
+ATTEMPTS = 2
 
 class DiscordScraper:
     """
@@ -58,6 +57,11 @@ class DiscordScraper:
             error = '\n{}\nError: Website not loaded or account not found'.format(self.current_user)
             if LOGGING:
                 print(error)
+        except WebDriverException:
+            error = '\n{}\nError: Selenium cannot determine loading status. Manually waiting.'.format(self.current_user)       
+            if LOGGING:
+                print(error)
+            time.sleep(WAIT_TIME)
 
     def make_soup(self):
         """
@@ -168,7 +172,7 @@ class DiscordScraper:
             print(f)
         return failures
 
-    def batch_scrape(self, tries=3):
+    def batch_scrape(self, tries=ATTEMPTS):
         """
         Runs a new batch of data collection
 

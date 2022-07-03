@@ -1,5 +1,6 @@
 import sys
 import re
+import time
 
 from bs4 import BeautifulSoup
 
@@ -8,11 +9,12 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 
 FOLLOWERS_DIV_CLASS = "r-1w6e6rj"
 LOGGING = False
-WAIT_TIME = 10
+WAIT_TIME = 5
+ATTEMPTS = 2
 
 class TwitterScraper:
     """
@@ -55,6 +57,12 @@ class TwitterScraper:
             error = '\n{}\nError: Website timed out'.format(self.current_user)
             if LOGGING:
                 print(error)
+        except WebDriverException:
+            error = '\n{}\nError: Selenium cannot determine loading status. Manually waiting.'.format(self.current_user)       
+            if LOGGING:
+                print(error)
+            time.sleep(WAIT_TIME)
+            
 
     def make_soup(self):
         """
@@ -193,7 +201,7 @@ class TwitterScraper:
             print(f)
         return failures
 
-    def batch_scrape(self, tries=2):
+    def batch_scrape(self, tries=ATTEMPTS):
         """
         Runs a new batch of data collection
 

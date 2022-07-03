@@ -1,5 +1,5 @@
 import sys
-import re
+import time
 
 from bs4 import BeautifulSoup
 from bs4.element import Tag
@@ -9,7 +9,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import TimeoutException, WebDriverException
 
 from DatabaseManager import DatabaseManager
 
@@ -65,14 +65,21 @@ class OpenseaScraper:
         Wait for the search results to load
         In the results preview (after typing but not pressing enter)
         """
-        try:
-            WebDriverWait(self.driver, WAIT_TIME).until(
-                EC.presence_of_element_located((By.ID, PREVIEW_RESULTS_ID))
-            )
-        except TimeoutException:
-            error = '\nError: Preview results timed out'
-            if LOGGING:
-                print(error)
+        #TODO check whether this is actually working
+        time.sleep(WAIT_TIME)
+        # try:
+        #     WebDriverWait(self.driver, WAIT_TIME).until(
+        #         EC.presence_of_element_located((By.ID, "PREVIEW_RESULTS_ID"))
+        #     )
+        # except TimeoutException:
+        #     error = '\n{}\nError: Preview results timed out'.format(self.current_project)
+        #     if LOGGING:
+        #         print(error)
+        # except WebDriverException:
+        #     error = '\n{}\nError: Selenium cannot determine loading status. Manually waiting.'.format(self.current_project)       
+        #     if LOGGING:
+        #         print(error)
+        #     time.sleep(WAIT_TIME)
 
     # def load_wait_projectpage(self):
     #     """
@@ -86,6 +93,11 @@ class OpenseaScraper:
     #         error = '\n{}\nError: Project page timed out'.format(self.current_project)
     #         if LOGGING:
     #             print(error)
+    #     except WebDriverException:
+    #         error = '\n{}\nError: Selenium cannot determine loading status. Manually waiting.'.format(self.current_project)       
+    #         if LOGGING:
+    #             print(error)
+    #         time.sleep(WAIT_TIME)
 
     def make_soup(self):
         """
@@ -111,16 +123,18 @@ class OpenseaScraper:
         Returns:
             bs4.Element.Tag: object containing a <a> html element
         """
-        print(project)
+        print('Finding match for project {} with quantity {}'.format(project, quantity))
         self.load_wait_results()
         self.make_soup()
         ul = self.soup.find("ul", id=PREVIEW_RESULTS_ID)
+        #ul = soup.find("ul", id="NavSearch--results")
         lis = [x for x in ul if isinstance(x, Tag)]
+
         for li in lis:
             text = li.getText()
             if text == 'COLLECTIONS':
                 pass
-            elif text == 'ITEMS':
+            elif text in ['ACCOUNTS', 'ITEMS']:
                 break
             else:
                 text_div = li.contents[0].contents[1]
@@ -128,17 +142,19 @@ class OpenseaScraper:
                 items_text = text_div.contents[0].contents[1].getText()
 
                 found_name = name_text.lower()
-                found_items = int(items_text[:-6].replace(',',''))
+                found_items = int(items_text.split(' item')[0].replace(",",""))
+                print('- {}, {}'.format(found_name, found_items))
 
                 if (found_name == project) and (found_items == quantity):
-                    # Found a match!
+                    print('Found a match!')
                     link = li.find('a')
                     return link
-                else:
-                    if LOGGING:
-                        msg = "\nCould not find a search result for {}, {}".format(project, quantity)
-                        print(msg)
-                    return None
+
+        # Searched all preview results
+        if LOGGING:
+            msg = "Could not find a preview search result for {}, {}\n".format(project, quantity)
+            print(msg)
+        return None
 
     def batch_scrape(self):
         """
@@ -148,14 +164,19 @@ class OpenseaScraper:
             list (str): projects that were not found
         """
         self.open_chrome()
-        self.retrieve_opensea_url()
-        self.load_wait_homepage()
-
         failures = []
 
         for i, project in enumerate(self.projects):
             i += 1
             self.current_project = project
+
+            ### quantities are not lining up with data table
+            ### need a better way of tracking down price data
+            ### maybe check the item list for name #1234, then go to collection from there
+            ### LOOK INTO OPENSEA API
+            #TODO clear search bar instead of refreshing
+            self.retrieve_opensea_url()
+            self.load_wait_homepage()
 
             # Type name into search bar
             input = self.driver.find_element(By.XPATH, "//input")
@@ -168,12 +189,12 @@ class OpenseaScraper:
             quantity = dm.lookup_quantity(project)
             match = self.search_find_match(project, quantity)
 
-            if match:
-                self.click_result(match)
-                # self.load_wait_projectpage()
-                self.make_soup()
-                name = self.soup.find('h1').getText()
-                print(name)
+            # if match:
+            #     self.click_result(match)
+            #     # self.load_wait_projectpage()
+            #     self.make_soup()
+            #     name = self.soup.find('h1').getText()
+            #     print(name)
 
                 # Gather data
                 # price = self.get_price()
@@ -185,8 +206,8 @@ class OpenseaScraper:
                 # else:
                 #     failures.append(project)
                 
-            else:
-                failures.append(project)
+            # else:
+            #     failures.append(project)
 
             sys.stdout.write('\r[{}/{}]'.format(i, len(self.projects)))
             sys.stdout.flush()

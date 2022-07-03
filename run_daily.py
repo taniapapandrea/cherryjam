@@ -32,11 +32,14 @@ def main():
     Gathers a large snapshot of objective data,
     As well as subjective human-entered data for a few selected projects
     """
-    backup_db()
     data_collection.daily_scrape()
+    # backup_db()
+
     # prediction_algorithm.train()
     # prediction_algorithm.predict_future()
     # prompt_human_input()
+
+    
 
 
 if __name__ == '__main__':

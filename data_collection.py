@@ -99,14 +99,14 @@ def scrape_opensea(dm, project_list):
 def daily_scrape():
     """
     Runs all scrapers and records data in database
+    Note: Because the entire daily scrape happens in one transaction,
+        pre/post release filters are based on yesterday
     """
     today = _today()
-
     dm = DatabaseManager()
+    dm.begin_transaction()
 
     # Scrape project data
-    # dm.begin_transaction()
-
     # scrape_rarity(dm)
 
     # twitter_ids_pre_release = dm.get_twitter_ids_pre_release(today)
@@ -115,10 +115,9 @@ def daily_scrape():
     # discord_ids_pre_release = dm.get_discord_ids_pre_release(today)
     # scrape_discord(dm, discord_ids_pre_release)
 
-    # dm.end_transaction()
-
-    # Lookup prices of released projects
-    dm.begin_transaction()
+    # Scrape prices
     projects_post_release = dm.get_projects_post_release(today)
+    #TODO check why this is only returning 4
     scrape_opensea(dm, projects_post_release)
+
     dm.end_transaction()
